@@ -196,7 +196,6 @@ async function getAllCustomers() {
   const q = `
     SELECT
       c.CustomerId,
-      c.CustomerCode,
       c.CustomerName,
       c.Status,
       c.Notes,

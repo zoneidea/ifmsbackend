@@ -238,7 +238,6 @@ async function listCustomers() {
 
     const data = rows.map((r) => ({
         customerId: r.CustomerId,
-        customerCode: r.CustomerCode,
         customerName: r.CustomerName,
         status: r.Status,
         notes: r.Notes ?? null,
