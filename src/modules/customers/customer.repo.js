@@ -172,7 +172,7 @@ async function updateCustomerWithConnection({ customerId, customerName, status, 
       return false;
     }
 
-    await this.insertConnectionAuditLog(tx, {
+    await insertConnectionAuditLog(tx, {
       connectionId: connection.connectionId,
       action: "UPDATE_CONNECTION",
       actor: auditMeta?.actor ?? actor ?? "system",
