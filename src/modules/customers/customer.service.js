@@ -1,5 +1,6 @@
-const { insertCustomerWithConnection, updateCustomerWithConnection } = require("./customer.repo");
+const { getAllCustomers, insertCustomerWithConnection, updateCustomerWithConnection } = require("./customer.repo");
 const { encryptToVarbinary } = require("../../utils/crypto");
+const { sanitizeConnectionForLog } = require("./audit.helper");
 
 function t(v) {
     if (v === undefined || v === null) return "";
@@ -78,6 +79,23 @@ async function createCustomer(payload, actor) {
     const encU = encryptToVarbinary(username ?? "");
     const encP = encryptToVarbinary(password ?? "");
 
+    const detail = sanitizeConnectionForLog(
+        {
+            customerId: null,
+            connectionId: null,
+            connectionName,
+            dbType,
+            host,
+            port,
+            databaseName,
+            authMode,
+            isActive,
+            optionsJson,
+            keyVersion: encU.version,
+        },
+        { credentialsChanged: true, includeIds: false }
+    );
+
     const { customerId, connectionId } = await insertCustomerWithConnection({
         customerName,
         status,
@@ -96,6 +114,12 @@ async function createCustomer(payload, actor) {
             isActive,
             keyVersion: encU.version, // ใช้ key version เดียวกัน
         },
+        auditMeta: {
+            actor,
+            ipAddress: payload.__ipAddress ?? null,
+            userAgent: payload.__userAgent ?? null,
+            detailJson: JSON.stringify(detail),
+        },
     });
 
     return { ok: true, customerId, connectionId };
@@ -111,7 +135,6 @@ async function updateCustomer(customerId, payload, actor) {
     const status = t(payload.status).toUpperCase();
     const notes = payload.notes === undefined || payload.notes === null ? null : String(payload.notes).trim();
 
-    if (!customerCode || customerCode.length > 50) return { ok: false, status: 400, code: "INVALID_CUSTOMER_CODE", message: "customerCode ไม่ถูกต้อง" };
     if (!customerName || customerName.length > 200) return { ok: false, status: 400, code: "INVALID_CUSTOMER_NAME", message: "customerName ไม่ถูกต้อง" };
     if (!isValidStatus(status)) return { ok: false, status: 400, code: "INVALID_STATUS", message: "status ต้องเป็น ACTIVE/INACTIVE/SUSPENDED" };
     if (notes !== null && notes.length > 500) return { ok: false, status: 400, code: "INVALID_NOTES", message: "notes ยาวเกิน 500 ตัวอักษร" };
@@ -158,6 +181,23 @@ async function updateCustomer(customerId, payload, actor) {
         keyVersion = encU.version;
     }
 
+    const detail = sanitizeConnectionForLog(
+        {
+            customerId,
+            connectionId,
+            connectionName,
+            dbType,
+            host,
+            port,
+            databaseName,
+            authMode,
+            isActive,
+            optionsJson,
+            keyVersion,
+        },
+        { credentialsChanged, includeIds: true }
+    );
+
     const updated = await updateCustomerWithConnection({
         customerId,
         customerName,
@@ -178,6 +218,12 @@ async function updateCustomer(customerId, payload, actor) {
             isActive,
             keyVersion,
         },
+        auditMeta: {
+            actor,
+            ipAddress: payload.__ipAddress ?? null,
+            userAgent: payload.__userAgent ?? null,
+            detailJson: JSON.stringify(detail),
+        },
     });
 
     if (!updated) {
@@ -187,4 +233,40 @@ async function updateCustomer(customerId, payload, actor) {
     return { ok: true, customerId, connectionId };
 }
 
-module.exports = { createCustomer, updateCustomer };
+async function listCustomers() {
+    const rows = await getAllCustomers();
+
+    const data = rows.map((r) => ({
+        customerId: r.CustomerId,
+        customerCode: r.CustomerCode,
+        customerName: r.CustomerName,
+        status: r.Status,
+        notes: r.Notes ?? null,
+        createdAt: r.CreatedAt,
+        updatedAt: r.UpdatedAt,
+
+        connection: r.ConnectionId
+            ? {
+                connectionId: r.ConnectionId,
+                connectionName: r.ConnectionName,
+                dbType: r.DbType,
+                host: r.Host,
+                port: r.Port,
+                databaseName: r.DatabaseName,
+                authMode: r.AuthMode,
+                optionsJson: r.OptionsJson ?? null,
+                isActive: !!r.IsActive,
+                lastTestAt: r.LastTestAt,
+                lastTestStatus: r.LastTestStatus ?? null,
+                lastTestMessage: r.LastTestMessage ?? null,
+                keyVersion: r.KeyVersion,
+                createdAt: r.ConnectionCreatedAt,
+                updatedAt: r.ConnectionUpdatedAt,
+            }
+            : null,
+    }));
+
+    return { ok: true, data };
+}
+
+module.exports = { createCustomer, updateCustomer, listCustomers };

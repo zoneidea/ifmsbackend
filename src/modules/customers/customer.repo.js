@@ -1,11 +1,30 @@
 const { sql, getPool } = require("../../db");
 
+async function insertConnectionAuditLog(tx, { connectionId, action, actor, ipAddress, userAgent, detailJson }) {
+  const req = new sql.Request(tx);
+  req.input("ConnectionId", sql.UniqueIdentifier, connectionId);
+  req.input("Action", sql.VarChar(30), action);
+  req.input("Actor", sql.NVarChar(150), actor ?? "system");
+  req.input("IpAddress", sql.NVarChar(45), ipAddress ?? null);
+  req.input("UserAgent", sql.NVarChar(300), userAgent ?? null);
+  req.input("DetailJson", sql.NVarChar(sql.MAX), detailJson ?? null);
+
+  const q = `
+    INSERT INTO ConnectionAuditLogs
+      (ConnectionId, Action, Actor, IpAddress, UserAgent, DetailJson, CreatedAt)
+    VALUES
+      (@ConnectionId, @Action, @Actor, @IpAddress, @UserAgent, @DetailJson, SYSUTCDATETIME());
+  `;
+  await req.query(q);
+}
+
 async function insertCustomerWithConnection({
   customerName,
   status,
   notes,
   actor,
   connection, // object ที่ผ่านการ validate + encrypt แล้ว
+  auditMeta
 }) {
   const pool = await getPool();
   const tx = new sql.Transaction(pool);
@@ -64,6 +83,16 @@ async function insertCustomerWithConnection({
     const r2 = await req2.query(q2);
     const connectionId = r2.recordset?.[0]?.ConnectionId;
 
+    await this.insertConnectionAuditLog(tx, {
+      connectionId,
+      action: "CREATE_CONNECTION",
+      actor: auditMeta?.actor ?? actor ?? "system",
+      ipAddress: auditMeta?.ipAddress ?? null,
+      userAgent: auditMeta?.userAgent ?? null,
+      detailJson: auditMeta?.detailJson ?? null,
+    });
+
+
     await tx.commit();
     return { customerId, connectionId };
   } catch (err) {
@@ -72,7 +101,7 @@ async function insertCustomerWithConnection({
   }
 }
 
-async function updateCustomerWithConnection({ customerId, customerName, status, notes, actor, connection }) {
+async function updateCustomerWithConnection({ customerId, customerName, status, notes, actor, connection, auditMeta }) {
   const pool = await getPool();
   const tx = new sql.Transaction(pool);
   await tx.begin();
@@ -143,6 +172,15 @@ async function updateCustomerWithConnection({ customerId, customerName, status, 
       return false;
     }
 
+    await this.insertConnectionAuditLog(tx, {
+      connectionId: connection.connectionId,
+      action: "UPDATE_CONNECTION",
+      actor: auditMeta?.actor ?? actor ?? "system",
+      ipAddress: auditMeta?.ipAddress ?? null,
+      userAgent: auditMeta?.userAgent ?? null,
+      detailJson: auditMeta?.detailJson ?? null,
+    });
+
     await tx.commit();
     return true;
   } catch (err) {
@@ -151,4 +189,48 @@ async function updateCustomerWithConnection({ customerId, customerName, status, 
   }
 }
 
-module.exports = { insertCustomerWithConnection, updateCustomerWithConnection };
+async function getAllCustomers() {
+  const pool = await getPool();
+  const req = pool.request();
+
+  const q = `
+    SELECT
+      c.CustomerId,
+      c.CustomerCode,
+      c.CustomerName,
+      c.Status,
+      c.Notes,
+      c.CreatedAt,
+      c.UpdatedAt,
+
+      cc.ConnectionId,
+      cc.ConnectionName,
+      cc.DbType,
+      cc.Host,
+      cc.Port,
+      cc.DatabaseName,
+      cc.AuthMode,
+      cc.OptionsJson,
+      cc.IsActive,
+      cc.LastTestAt,
+      cc.LastTestStatus,
+      cc.LastTestMessage,
+      cc.KeyVersion,
+      cc.CreatedAt AS ConnectionCreatedAt,
+      cc.UpdatedAt AS ConnectionUpdatedAt
+    FROM Customers c
+    OUTER APPLY (
+      SELECT TOP 1 *
+      FROM CustomerDbConnections x
+      WHERE x.CustomerId = c.CustomerId
+      ORDER BY x.IsActive DESC, x.UpdatedAt DESC
+    ) cc
+    WHERE c.Status IN ('ACTIVE', 'INACTIVE', 'SUSPENDED')
+    ORDER BY c.UpdatedAt DESC;
+  `;
+
+  const r = await req.query(q);
+  return r.recordset || [];
+}
+
+module.exports = { getAllCustomers, insertCustomerWithConnection, updateCustomerWithConnection, insertConnectionAuditLog };
