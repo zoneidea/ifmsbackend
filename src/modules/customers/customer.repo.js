@@ -172,14 +172,14 @@ async function updateCustomerWithConnection({ customerId, customerName, status, 
       return false;
     }
 
-    await insertConnectionAuditLog(tx, {
-      connectionId: connection.connectionId,
-      action: "UPDATE_CONNECTION",
-      actor: auditMeta?.actor ?? actor ?? "system",
-      ipAddress: auditMeta?.ipAddress ?? null,
-      userAgent: auditMeta?.userAgent ?? null,
-      detailJson: auditMeta?.detailJson ?? null,
-    });
+    // await insertConnectionAuditLog(tx, {
+    //   connectionId: connection.connectionId,
+    //   action: "UPDATE_CONNECTION",
+    //   actor: auditMeta?.actor ?? actor ?? "system",
+    //   ipAddress: auditMeta?.ipAddress ?? null,
+    //   userAgent: auditMeta?.userAgent ?? null,
+    //   detailJson: auditMeta?.detailJson ?? null,
+    // });
 
     await tx.commit();
     return true;
