@@ -21,6 +21,12 @@ function isValidAuthMode(v) {
     return v === "SQL" || v === "WINDOWS";
 }
 
+function isGuid(v) {
+  if (!v) return false;
+  return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(v);
+}
+
+
 async function createCustomer(payload, actor) {
     const customerName = t(payload.customerName);
     const status = t(payload.status).toUpperCase();
