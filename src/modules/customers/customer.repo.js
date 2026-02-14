@@ -83,14 +83,14 @@ async function insertCustomerWithConnection({
     const r2 = await req2.query(q2);
     const connectionId = r2.recordset?.[0]?.ConnectionId;
 
-    // await this.insertConnectionAuditLog(tx, {
-    //   connectionId,
-    //   action: "CREATE_CONNECTION",
-    //   actor: auditMeta?.actor ?? actor ?? "system",
-    //   ipAddress: auditMeta?.ipAddress ?? null,
-    //   userAgent: auditMeta?.userAgent ?? null,
-    //   detailJson: auditMeta?.detailJson ?? null,
-    // });
+    await insertConnectionAuditLog(tx, {
+      connectionId,
+      action: "CREATE_CONNECTION",
+      actor: auditMeta?.actor ?? actor ?? "system",
+      ipAddress: auditMeta?.ipAddress ?? null,
+      userAgent: auditMeta?.userAgent ?? null,
+      detailJson: auditMeta?.detailJson ?? null,
+    });
 
 
     await tx.commit();
