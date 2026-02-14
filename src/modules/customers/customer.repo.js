@@ -142,9 +142,9 @@ async function updateCustomerWithConnection({ customerId, customerName, status, 
     req2.input("IsActive", sql.Bit, connection.isActive ? 1 : 0);
 
     // ถ้า encUsername/encPassword เป็น null = ไม่อัพเดท
-    req2.input("EncUsername", sql.VarBinary(sql.MAX), connection.encUsername);
-    req2.input("EncPassword", sql.VarBinary(sql.MAX), connection.encPassword);
-    req2.input("KeyVersion", sql.Int, connection.keyVersion);
+    req2.input("EncUsername", sql.VarBinary(sql.MAX), connection.encUsername ?? null);
+    req2.input("EncPassword", sql.VarBinary(sql.MAX), connection.encPassword ?? null);
+    req2.input("KeyVersion", sql.Int, connection.keyVersion ?? null);
 
     const q2 = `
       UPDATE CustomerDbConnections
@@ -172,14 +172,14 @@ async function updateCustomerWithConnection({ customerId, customerName, status, 
       return false;
     }
 
-    // await insertConnectionAuditLog(tx, {
-    //   connectionId: connection.connectionId,
-    //   action: "UPDATE_CONNECTION",
-    //   actor: auditMeta?.actor ?? actor ?? "system",
-    //   ipAddress: auditMeta?.ipAddress ?? null,
-    //   userAgent: auditMeta?.userAgent ?? null,
-    //   detailJson: auditMeta?.detailJson ?? null,
-    // });
+    await insertConnectionAuditLog(tx, {
+      connectionId: connection.connectionId,
+      action: "UPDATE_CONNECTION",
+      actor: auditMeta?.actor ?? actor ?? "system",
+      ipAddress: auditMeta?.ipAddress ?? null,
+      userAgent: auditMeta?.userAgent ?? null,
+      detailJson: auditMeta?.detailJson ?? null,
+    });
 
     await tx.commit();
     return true;
