@@ -187,6 +187,8 @@ async function updateCustomer(customerId, payload, actor) {
         keyVersion = encU.version;
     }
 
+    const credentialsChanged = (c.username !== undefined || c.password !== undefined);
+
     const detail = sanitizeConnectionForLog(
         {
             customerId,
