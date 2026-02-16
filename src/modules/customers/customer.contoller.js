@@ -1,4 +1,4 @@
-const { createCustomer, updateCustomer, listCustomers } = require("./customer.service");
+const { createCustomer, updateCustomer, listCustomers, testCustomerConnection } = require("./customer.service");
 
 async function postCustomer(req, res) {
     // ในระบบจริง actor มาจาก SSO/JWT แต่ตอนนี้ยังไม่ทำ
@@ -66,5 +66,22 @@ async function getCustomers(req, res) {
     });
 }
 
+async function testConnection(req, res) {
+    const { customerId, connectionId } = req.params;
 
-module.exports = { postCustomer, putCustomer, getCustomers };
+    const actor = req.headers["x-actor"] || "system";
+
+    const result = await testCustomerConnection(
+        customerId,
+        connectionId,
+        actor,
+        {
+            ipAddress: req.ip,
+            userAgent: req.headers["user-agent"]
+        }
+    );
+
+    return res.status(result.status).json(result);
+}
+
+module.exports = { postCustomer, putCustomer, getCustomers, testConnection };

@@ -22,4 +22,27 @@ function encryptToVarbinary(plainText) {
     return { version, data: Buffer.concat([iv, tag, ciphertext]) };
 }
 
-module.exports = { encryptToVarbinary };
+function decryptFromVarbinary(buffer, keyVersion) {
+    if (!buffer) return null;
+
+    const keyRaw = process.env[`ENC_KEY_V${keyVersion}`];
+    if (!keyRaw) throw new Error(`Missing ENC_KEY_V${keyVersion}`);
+
+    const key = crypto.createHash("sha256").update(keyRaw).digest();
+
+    const iv = buffer.subarray(0, 12);
+    const tag = buffer.subarray(12, 28);
+    const ciphertext = buffer.subarray(28);
+
+    const decipher = crypto.createDecipheriv("aes-256-gcm", key, iv);
+    decipher.setAuthTag(tag);
+
+    const decrypted = Buffer.concat([
+        decipher.update(ciphertext),
+        decipher.final(),
+    ]);
+
+    return decrypted.toString("utf8");
+}
+
+module.exports = { encryptToVarbinary, decryptFromVarbinary };

@@ -232,4 +232,46 @@ async function getAllCustomers() {
   return r.recordset || [];
 }
 
-module.exports = { getAllCustomers, insertCustomerWithConnection, updateCustomerWithConnection, insertConnectionAuditLog };
+async function getConnectionById(customerId, connectionId) {
+  const pool = await getPool();
+  const req = pool.request();
+
+  req.input("CustomerId", sql.UniqueIdentifier, customerId);
+  req.input("ConnectionId", sql.UniqueIdentifier, connectionId);
+
+  const q = `
+    SELECT *
+    FROM CustomerDbConnections
+    WHERE CustomerId = @CustomerId
+      AND ConnectionId = @ConnectionId
+      AND IsActive = 1;
+  `;
+
+  const r = await req.query(q);
+  return r.recordset[0] || null;
+}
+
+async function updateConnectionTestResult(tx, {
+  connectionId,
+  status,
+  message
+}) {
+  const req = new sql.Request(tx);
+
+  req.input("ConnectionId", sql.UniqueIdentifier, connectionId);
+  req.input("Status", sql.VarChar(20), status);
+  req.input("Message", sql.VarChar(4000), message ?? null);
+
+  const q = `
+    UPDATE CustomerDbConnections
+    SET LastTestAt = SYSUTCDATETIME(),
+        LastTestStatus = @Status,
+        LastTestMessage = @Message
+    WHERE ConnectionId = @ConnectionId;
+  `;
+
+  await req.query(q);
+}
+
+
+module.exports = { getAllCustomers, insertCustomerWithConnection, updateCustomerWithConnection, insertConnectionAuditLog, getConnectionById, updateConnectionTestResult };
