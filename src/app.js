@@ -25,6 +25,9 @@ app.get("/health", (req, res) => {
     res.json({ ok: true, ts: new Date().toISOString() });
 });
 
+const connectionRoutes = require("./modules/connections/connection.routes");
+app.use("/connections", connectionRoutes);
+
 // ✅ POST /customers
 app.use("/customers", customerRoutes);
 app.use('/users', usersRoutes)

@@ -1,5 +1,5 @@
 const sql = require("mssql");
-const { getAllCustomers, insertCustomerWithConnection, updateCustomerWithConnection, insertConnectionAuditLog, getConnectionById, updateConnectionTestResult } = require("./customer.repo");
+const { getAllCustomers, insertCustomerWithConnection, updateCustomerWithConnection, insertConnectionAuditLog } = require("./customer.repo");
 const { encryptToVarbinary, decryptFromVarbinary } = require("../../utils/crypto");
 const { sanitizeConnectionForLog } = require("./audit.helper");
 
@@ -278,79 +278,4 @@ async function listCustomers() {
     return { ok: true, data };
 }
 
-async function testCustomerConnection(customerId, connectionId, actor, auditMeta) {
-
-    const conn = await getConnectionById(customerId, connectionId);
-
-    if (!conn) {
-        return { ok: false, status: 404, message: "Connection not found" };
-    }
-
-    let username = null;
-    let password = null;
-
-    if (conn.AuthMode === "SQL") {
-        username = decryptFromVarbinary(conn.EncUsername, conn.KeyVersion);
-        password = decryptFromVarbinary(conn.EncPassword, conn.KeyVersion);
-    }
-
-    const config = {
-        user: username,
-        password: password,
-        server: conn.Host,
-        database: conn.DatabaseName,
-        port: conn.Port,
-        options: {
-            encrypt: false,
-            trustServerCertificate: true,
-        },
-        pool: { max: 2, min: 0, idleTimeoutMillis: 5000 },
-        connectionTimeout: 5000,
-        requestTimeout: 5000,
-    };
-
-    let status = "FAILED";
-    let message = null;
-
-    const poolMain = await getPool();
-    const tx = new sql.Transaction(poolMain);
-    await tx.begin();
-
-    try {
-        const testPool = await sql.connect(config);
-        await testPool.request().query("SELECT 1");
-        await testPool.close();
-
-        status = "SUCCESS";
-        message = "Connection successful";
-
-    } catch (err) {
-        status = "FAILED";
-        message = err.message.substring(0, 3900);
-    }
-
-    await updateConnectionTestResult(tx, {
-        connectionId,
-        status,
-        message
-    });
-
-    await insertConnectionAuditLog(tx, {
-        connectionId,
-        action: "TEST_CONNECTION",
-        actor,
-        ipAddress: auditMeta?.ipAddress,
-        userAgent: auditMeta?.userAgent,
-        detailJson: JSON.stringify({ status })
-    });
-
-    await tx.commit();
-
-    return {
-        ok: status === "SUCCESS",
-        status: status === "SUCCESS" ? 200 : 400,
-        message
-    };
-}
-
-module.exports = { createCustomer, updateCustomer, listCustomers, testCustomerConnection };
+module.exports = { createCustomer, updateCustomer, listCustomers };
