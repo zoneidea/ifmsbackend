@@ -1,5 +1,5 @@
 const bcrypt = require("bcrypt");
-const { insertUser, getUserByUsername } = require("./user.repo");
+const { insertUser, getUserByUsername, getAllUsers, softDeleteUser } = require("./user.repo");
 
 function t(v) {
     return (v || "").toString().trim();
@@ -64,7 +64,39 @@ async function loginUser(payload) {
     };
 }
 
+async function listUsers() {
+    const rows = await getAllUsers();
+    return {
+        ok: true,
+        data: rows.map((u) => ({
+            username: u.Username,
+            isActive: !!u.IsActive,
+            createdAt: u.CreatedAt,
+            updatedAt: u.UpdatedAt,
+        })),
+    };
+}
+
+async function deactivateUser(username) {
+    const un = t(username);
+
+    if (!un || un.length > 50) {
+        return { ok: false, status: 400, code: "INVALID_USERNAME", message: "username ไม่ถูกต้อง" };
+    }
+
+    const updated = await softDeleteUser(un);
+
+    if (!updated) {
+        // ไม่เจอ user หรือ user ถูกปิดไปแล้ว
+        return { ok: false, status: 404, code: "NOT_FOUND", message: "ไม่พบผู้ใช้ หรือถูกปิดใช้งานแล้ว" };
+    }
+
+    return { ok: true };
+}
+
 module.exports = {
     createUser,
     loginUser,
+    listUsers,
+    deactivateUser,
 };
