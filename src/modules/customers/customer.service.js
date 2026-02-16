@@ -45,11 +45,11 @@ async function createCustomer(payload, actor) {
     // ✅ Connection ต้องมี
     const c = payload.connection || {};
     const connectionName = t(c.connectionName);
-    const dbType = t(c.dbType).toUpperCase();
+    const dbType = t("MSSQL").toUpperCase();
     const host = t(c.host);
     const port = Number(c.port);
     const databaseName = t(c.databaseName);
-    const authMode = t(c.authMode).toUpperCase();
+    const authMode = t("SQL").toUpperCase();
     const username = c.username ?? null;
     const password = c.password ?? null;
     const optionsJson = c.optionsJson === undefined ? null : String(c.optionsJson);
@@ -70,16 +70,17 @@ async function createCustomer(payload, actor) {
     if (!databaseName || databaseName.length > 128) {
         return { ok: false, status: 400, code: "INVALID_DBNAME", message: "databaseName ไม่ถูกต้อง" };
     }
-    if (!isValidAuthMode(authMode)) {
-        return { ok: false, status: 400, code: "INVALID_AUTHMODE", message: "authMode ต้องเป็น SQL หรือ WINDOWS" };
-    }
+
+    // if (!isValidAuthMode(authMode)) {
+    //     return { ok: false, status: 400, code: "INVALID_AUTHMODE", message: "authMode ต้องเป็น SQL หรือ WINDOWS" };
+    // }
 
     // ถ้า SQL auth ต้องมี username/password
-    if (authMode === "SQL") {
-        if (!t(username) || !t(password)) {
-            return { ok: false, status: 400, code: "MISSING_CREDENTIALS", message: "ต้องระบุ username/password" };
-        }
-    }
+    // if (authMode === "SQL") {
+    //     if (!t(username) || !t(password)) {
+    //         return { ok: false, status: 400, code: "MISSING_CREDENTIALS", message: "ต้องระบุ username/password" };
+    //     }
+    // }
 
     // ✅ Encrypt credentials (ห้ามเก็บ plain text)
     const encU = encryptToVarbinary(username ?? "");
@@ -153,20 +154,20 @@ async function updateCustomer(customerId, payload, actor) {
     }
 
     const connectionName = t(c.connectionName);
-    const dbType = t(c.dbType).toUpperCase();
+    const dbType = t("MSSQL").toUpperCase();
     const host = t(c.host);
     const port = Number(c.port);
     const databaseName = t(c.databaseName);
-    const authMode = t(c.authMode).toUpperCase();
+    const authMode = t("SQL").toUpperCase();
     const optionsJson = c.optionsJson === undefined ? null : String(c.optionsJson);
     const isActive = c.isActive === undefined ? true : !!c.isActive;
 
     if (!connectionName || connectionName.length > 100) return { ok: false, status: 400, code: "INVALID_CONNECTION_NAME", message: "connectionName ไม่ถูกต้อง" };
-    if (!isValidDbType(dbType)) return { ok: false, status: 400, code: "INVALID_DBTYPE", message: "dbType รองรับเฉพาะ MSSQL ตอนนี้" };
+    // if (!isValidDbType(dbType)) return { ok: false, status: 400, code: "INVALID_DBTYPE", message: "dbType รองรับเฉพาะ MSSQL ตอนนี้" };
     if (!host || host.length > 255) return { ok: false, status: 400, code: "INVALID_HOST", message: "host ไม่ถูกต้อง" };
     if (!Number.isInteger(port) || port < 1 || port > 65535) return { ok: false, status: 400, code: "INVALID_PORT", message: "port ไม่ถูกต้อง" };
     if (!databaseName || databaseName.length > 128) return { ok: false, status: 400, code: "INVALID_DBNAME", message: "databaseName ไม่ถูกต้อง" };
-    if (!isValidAuthMode(authMode)) return { ok: false, status: 400, code: "INVALID_AUTHMODE", message: "authMode ต้องเป็น SQL หรือ WINDOWS" };
+    // if (!isValidAuthMode(authMode)) return { ok: false, status: 400, code: "INVALID_AUTHMODE", message: "authMode ต้องเป็น SQL หรือ WINDOWS" };
 
     // credentials: ส่งมาเมื่ออยากเปลี่ยนเท่านั้น
     let encUsername = null;
@@ -175,11 +176,11 @@ async function updateCustomer(customerId, payload, actor) {
 
     if (c.username !== undefined || c.password !== undefined) {
         // ถ้า authMode=SQL แล้วส่งมา ต้องครบ
-        if (authMode === "SQL") {
-            if (!t(c.username) || !t(c.password)) {
-                return { ok: false, status: 400, code: "MISSING_CREDENTIALS", message: "ถ้าจะแก้ credentials ต้องส่ง username/password ให้ครบ" };
-            }
-        }
+        // if (authMode === "SQL") {
+        //     if (!t(c.username) || !t(c.password)) {
+        //         return { ok: false, status: 400, code: "MISSING_CREDENTIALS", message: "ถ้าจะแก้ credentials ต้องส่ง username/password ให้ครบ" };
+        //     }
+        // }
         const encU = encryptToVarbinary(c.username ?? "");
         const encP = encryptToVarbinary(c.password ?? "");
         encUsername = encU.data;
