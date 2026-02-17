@@ -28,6 +28,9 @@ app.get("/health", (req, res) => {
 const connectionRoutes = require("./modules/connections/connection.routes");
 app.use("/connections", connectionRoutes);
 
+const reportRoutes = require("./modules/reports/report.routes");
+app.use("/reports", reportRoutes);
+
 // ✅ POST /customers
 app.use("/customers", customerRoutes);
 app.use('/users', usersRoutes)
