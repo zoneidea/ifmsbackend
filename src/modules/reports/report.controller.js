@@ -1,4 +1,4 @@
-const { createReport } = require("./report.service");
+const { createReport, listReports } = require("./report.service");
 
 async function postReport(req, res) {
     const result = await createReport(req.body || {});
@@ -12,4 +12,13 @@ async function postReport(req, res) {
     });
 }
 
-module.exports = { postReport };
+async function getReports(req, res) {
+    const result = await listReports(req.query);
+    return res.status(200).json({
+        ok: true,
+        data: result.data,
+        message: "ดึงรายการรายงานสำเร็จ",
+    });
+}
+
+module.exports = { postReport, getReports };

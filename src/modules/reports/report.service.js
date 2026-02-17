@@ -1,4 +1,4 @@
-const { insertReportWithSettings } = require("./report.repo");
+const { insertReportWithSettings, getAllReports } = require("./report.repo");
 
 function t(v) {
     return (v === undefined || v === null) ? "" : String(v).trim();
@@ -94,4 +94,35 @@ async function createReport(payload) {
     return { ok: true, reportId };
 }
 
-module.exports = { createReport };
+async function listReports(query) {
+    const q = query || {};
+    // ?isActive=1 หรือ 0
+    const isActive =
+        q.isActive === "1" || q.isActive === 1 || q.isActive === true
+            ? true
+            : q.isActive === "0" || q.isActive === 0 || q.isActive === false
+                ? false
+                : undefined;
+
+    const rows = await getAllReports({ isActive });
+
+    return {
+        ok: true,
+        data: rows.map((x) => ({
+            reportId: x.ReportId,
+            reportKey: x.ReportKey,
+            reportName: x.ReportName,
+            reportPath: x.ReportPath ?? null,
+            templateKey: x.TemplateKey,
+            dataSourceKey: x.DataSourceKey,
+            exportModes: x.ExportModes,
+            isActive: !!x.IsActive,
+            hasSettings: !!x.HasSettings,
+            settingsUpdatedAt: x.SettingsUpdatedAt ?? null,
+            createdAt: x.CreatedAt,
+            updatedAt: x.UpdatedAt,
+        })),
+    };
+}
+
+module.exports = { createReport, listReports };

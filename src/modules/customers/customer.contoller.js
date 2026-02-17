@@ -1,4 +1,4 @@
-const { createCustomer, updateCustomer, listCustomers } = require("./customer.service");
+const { createCustomer, updateCustomer, listCustomers, addReportToCustomer } = require("./customer.service");
 
 async function postCustomer(req, res) {
     // ในระบบจริง actor มาจาก SSO/JWT แต่ตอนนี้ยังไม่ทำ
@@ -66,4 +66,19 @@ async function getCustomers(req, res) {
     });
 }
 
-module.exports = { postCustomer, putCustomer, getCustomers };
+async function postCustomerReport(req, res) {
+    const customerId = String(req.params.customerId || "");
+    const result = await addReportToCustomer(customerId, req.body || {});
+
+    if (!result.ok) {
+        return res.status(result.status).json({ ok: false, code: result.code, message: result.message });
+    }
+
+    return res.status(201).json({
+        ok: true,
+        data: { customerReportId: result.customerReportId },
+        message: "เพิ่มรายงานให้ลูกค้าสำเร็จ",
+    });
+}
+
+module.exports = { postCustomer, putCustomer, getCustomers, postCustomerReport };

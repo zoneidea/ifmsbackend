@@ -232,4 +232,36 @@ async function getAllCustomers() {
   return r.recordset || [];
 }
 
-module.exports = { getAllCustomers, insertCustomerWithConnection, updateCustomerWithConnection, insertConnectionAuditLog };
+async function insertCustomerReport({
+  customerId,
+  reportId,
+  menuName,
+  sortOrder,
+  isActive,
+  connectionId,
+  overrideJson,
+}) {
+  const pool = await getPool();
+  const req = pool.request();
+
+  req.input("CustomerId", sql.UniqueIdentifier, customerId);
+  req.input("ReportId", sql.UniqueIdentifier, reportId);
+  req.input("MenuName", sql.NVarChar(200), menuName);
+  req.input("SortOrder", sql.Int, sortOrder);
+  req.input("IsActive", sql.Bit, isActive ? 1 : 0);
+  req.input("ConnectionId", sql.UniqueIdentifier, connectionId);
+  req.input("OverrideJson", sql.NVarChar(sql.MAX), overrideJson ?? null);
+
+  const q = `
+    INSERT INTO CustomerReports
+      (CustomerReportId, CustomerId, ReportId, MenuName, SortOrder, IsActive, ConnectionId, OverrideJson, CreatedAt, UpdatedAt)
+    OUTPUT INSERTED.CustomerReportId
+    VALUES
+      (NEWID(), @CustomerId, @ReportId, @MenuName, @SortOrder, @IsActive, @ConnectionId, @OverrideJson, SYSUTCDATETIME(), SYSUTCDATETIME());
+  `;
+
+  const r = await req.query(q);
+  return r.recordset?.[0]?.CustomerReportId;
+}
+
+module.exports = { getAllCustomers, insertCustomerWithConnection, updateCustomerWithConnection, insertConnectionAuditLog, insertCustomerReport };

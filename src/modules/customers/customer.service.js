@@ -1,5 +1,5 @@
 const sql = require("mssql");
-const { getAllCustomers, insertCustomerWithConnection, updateCustomerWithConnection, insertConnectionAuditLog } = require("./customer.repo");
+const { getAllCustomers, insertCustomerWithConnection, updateCustomerWithConnection, insertConnectionAuditLog, insertCustomerReport } = require("./customer.repo");
 const { encryptToVarbinary, decryptFromVarbinary } = require("../../utils/crypto");
 const { sanitizeConnectionForLog } = require("./audit.helper");
 
@@ -22,9 +22,26 @@ function isValidAuthMode(v) {
     return v === "SQL" || v === "WINDOWS";
 }
 
+function toInt(v, fallback = 0) {
+    const n = Number(v);
+    return Number.isFinite(n) ? Math.trunc(n) : fallback;
+}
+
 function isGuid(v) {
     if (!v) return false;
     return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(v);
+}
+
+function isValidJsonOrNull(s) {
+    if (s === null || s === undefined) return true;
+    const txt = String(s).trim();
+    if (!txt) return true;
+    try {
+        JSON.parse(txt);
+        return true;
+    } catch {
+        return false;
+    }
 }
 
 
@@ -278,4 +295,45 @@ async function listCustomers() {
     return { ok: true, data };
 }
 
-module.exports = { createCustomer, updateCustomer, listCustomers };
+async function addReportToCustomer(customerId, payload) {
+    if (!isGuid(customerId)) {
+        return { ok: false, status: 400, code: "INVALID_CUSTOMER_ID", message: "customerId ไม่ถูกต้อง" };
+    }
+
+    const reportId = t(payload.reportId);
+    const connectionId = t(payload.connectionId);
+    const menuName = t(payload.menuName);
+    const sortOrder = toInt(payload.sortOrder, 0);
+    const isActive = payload.isActive === undefined ? true : !!payload.isActive;
+    const overrideJson = payload.overrideJson === undefined ? null : String(payload.overrideJson);
+
+    if (!isGuid(reportId)) {
+        return { ok: false, status: 400, code: "INVALID_REPORT_ID", message: "reportId ไม่ถูกต้อง" };
+    }
+    if (!isGuid(connectionId)) {
+        return { ok: false, status: 400, code: "INVALID_CONNECTION_ID", message: "connectionId ไม่ถูกต้อง" };
+    }
+    if (!menuName || menuName.length > 200) {
+        return { ok: false, status: 400, code: "INVALID_MENU_NAME", message: "menuName ไม่ถูกต้อง" };
+    }
+    if (!Number.isInteger(sortOrder) || sortOrder < 0 || sortOrder > 1000000) {
+        return { ok: false, status: 400, code: "INVALID_SORT_ORDER", message: "sortOrder ไม่ถูกต้อง" };
+    }
+    if (!isValidJsonOrNull(overrideJson)) {
+        return { ok: false, status: 400, code: "INVALID_OVERRIDE_JSON", message: "overrideJson ต้องเป็น JSON ที่ถูกต้อง" };
+    }
+
+    const customerReportId = await insertCustomerReport({
+        customerId,
+        reportId,
+        menuName,
+        sortOrder,
+        isActive,
+        connectionId,
+        overrideJson,
+    });
+
+    return { ok: true, customerReportId };
+}
+
+module.exports = { createCustomer, updateCustomer, listCustomers, addReportToCustomer };
