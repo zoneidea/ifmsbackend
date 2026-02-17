@@ -232,36 +232,40 @@ async function getAllCustomers() {
   return r.recordset || [];
 }
 
-async function insertCustomerReport({
-  customerId,
-  reportId,
-  menuName,
-  sortOrder,
-  isActive,
-  connectionId,
-  overrideJson,
-}) {
+async function insertCustomerReport(customerId, items) {
   const pool = await getPool();
-  const req = pool.request();
+  const tx = new sql.Transaction(pool);
+  await tx.begin();
 
-  req.input("CustomerId", sql.UniqueIdentifier, customerId);
-  req.input("ReportId", sql.UniqueIdentifier, reportId);
-  req.input("MenuName", sql.NVarChar(200), menuName);
-  req.input("SortOrder", sql.Int, sortOrder);
-  req.input("IsActive", sql.Bit, isActive ? 1 : 0);
-  req.input("ConnectionId", sql.UniqueIdentifier, connectionId);
-  req.input("OverrideJson", sql.NVarChar(sql.MAX), overrideJson ?? null);
+  try {
+    for (const item of items) {
+      const req = new sql.Request(tx);
 
-  const q = `
-    INSERT INTO CustomerReports
-      (CustomerReportId, CustomerId, ReportId, MenuName, SortOrder, IsActive, ConnectionId, OverrideJson, CreatedAt, UpdatedAt)
-    OUTPUT INSERTED.CustomerReportId
-    VALUES
-      (NEWID(), @CustomerId, @ReportId, @MenuName, @SortOrder, @IsActive, @ConnectionId, @OverrideJson, SYSUTCDATETIME(), SYSUTCDATETIME());
-  `;
+      req.input("CustomerId", sql.UniqueIdentifier, customerId);
+      req.input("ReportId", sql.UniqueIdentifier, item.reportId);
+      req.input("MenuName", sql.NVarChar(200), item.menuName);
+      req.input("SortOrder", sql.Int, item.sortOrder);
+      req.input("IsActive", sql.Bit, item.isActive ? 1 : 0);
+      req.input("ConnectionId", sql.UniqueIdentifier, item.connectionId);
+      req.input("OverrideJson", sql.NVarChar(sql.MAX), item.overrideJson ?? null);
 
-  const r = await req.query(q);
-  return r.recordset?.[0]?.CustomerReportId;
+      const q = `
+        INSERT INTO CustomerReports
+          (CustomerReportId, CustomerId, ReportId, MenuName, SortOrder, IsActive, ConnectionId, OverrideJson, CreatedAt, UpdatedAt)
+        VALUES
+          (NEWID(), @CustomerId, @ReportId, @MenuName, @SortOrder, @IsActive, @ConnectionId, @OverrideJson, SYSUTCDATETIME(), SYSUTCDATETIME());
+      `;
+
+      await req.query(q);
+    }
+
+    await tx.commit();
+    return true;
+
+  } catch (err) {
+    await tx.rollback();
+    throw err;
+  }
 }
 
 module.exports = { getAllCustomers, insertCustomerWithConnection, updateCustomerWithConnection, insertConnectionAuditLog, insertCustomerReport };

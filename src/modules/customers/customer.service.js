@@ -297,43 +297,31 @@ async function listCustomers() {
 
 async function addReportToCustomer(customerId, payload) {
     if (!isGuid(customerId)) {
-        return { ok: false, status: 400, code: "INVALID_CUSTOMER_ID", message: "customerId ไม่ถูกต้อง" };
+        return { ok: false, status: 400, message: "customerId ไม่ถูกต้อง" };
     }
 
-    const reportId = t(payload.reportId);
-    const connectionId = t(payload.connectionId);
-    const menuName = t(payload.menuName);
-    const sortOrder = toInt(payload.sortOrder, 0);
-    const isActive = payload.isActive === undefined ? true : !!payload.isActive;
-    const overrideJson = payload.overrideJson === undefined ? null : String(payload.overrideJson);
+    const items = Array.isArray(payload.items) ? payload.items : [];
 
-    if (!isGuid(reportId)) {
-        return { ok: false, status: 400, code: "INVALID_REPORT_ID", message: "reportId ไม่ถูกต้อง" };
-    }
-    if (!isGuid(connectionId)) {
-        return { ok: false, status: 400, code: "INVALID_CONNECTION_ID", message: "connectionId ไม่ถูกต้อง" };
-    }
-    if (!menuName || menuName.length > 200) {
-        return { ok: false, status: 400, code: "INVALID_MENU_NAME", message: "menuName ไม่ถูกต้อง" };
-    }
-    if (!Number.isInteger(sortOrder) || sortOrder < 0 || sortOrder > 1000000) {
-        return { ok: false, status: 400, code: "INVALID_SORT_ORDER", message: "sortOrder ไม่ถูกต้อง" };
-    }
-    if (!isValidJsonOrNull(overrideJson)) {
-        return { ok: false, status: 400, code: "INVALID_OVERRIDE_JSON", message: "overrideJson ต้องเป็น JSON ที่ถูกต้อง" };
+    if (!items.length) {
+        return { ok: false, status: 400, message: "items ต้องเป็น array และต้องมีอย่างน้อย 1 รายการ" };
     }
 
-    const customerReportId = await insertCustomerReport({
-        customerId,
-        reportId,
-        menuName,
-        sortOrder,
-        isActive,
-        connectionId,
-        overrideJson,
-    });
+    // validate ทั้งหมดก่อน
+    for (const item of items) {
+        if (!isGuid(item.reportId)) {
+            return { ok: false, status: 400, message: "reportId ไม่ถูกต้อง" };
+        }
+        if (!isGuid(item.connectionId)) {
+            return { ok: false, status: 400, message: "connectionId ไม่ถูกต้อง" };
+        }
+        if (!item.menuName || item.menuName.length > 200) {
+            return { ok: false, status: 400, message: "menuName ไม่ถูกต้อง" };
+        }
+    }
 
-    return { ok: true, customerReportId };
+    await insertCustomerReport(customerId, items);
+
+    return { ok: true };
 }
 
 module.exports = { createCustomer, updateCustomer, listCustomers, addReportToCustomer };

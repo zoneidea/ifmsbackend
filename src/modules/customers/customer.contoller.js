@@ -67,17 +67,19 @@ async function getCustomers(req, res) {
 }
 
 async function postCustomerReport(req, res) {
-    const customerId = String(req.params.customerId || "");
-    const result = await addReportToCustomer(customerId, req.body || {});
+    const customerId = req.params.customerId;
+    const result = await addManyReportsToCustomer(customerId, req.body);
 
     if (!result.ok) {
-        return res.status(result.status).json({ ok: false, code: result.code, message: result.message });
+        return res.status(result.status).json({
+            ok: false,
+            message: result.message
+        });
     }
 
     return res.status(201).json({
         ok: true,
-        data: { customerReportId: result.customerReportId },
-        message: "เพิ่มรายงานให้ลูกค้าสำเร็จ",
+        message: "เพิ่มรายงานสำเร็จ"
     });
 }
 
