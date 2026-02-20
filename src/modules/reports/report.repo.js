@@ -91,4 +91,52 @@ async function getAllReports({ isActive } = {}) {
   return r.recordset || [];
 }
 
-module.exports = { insertReportWithSettings, getAllReports };
+async function getViewerInit(customerId) {
+  const pool = await getPool();
+  const req = pool.request();
+  req.input("CustomerId", sql.UniqueIdentifier, customerId);
+
+  const q = `
+    SELECT
+      c.CustomerId,
+      c.CustomerName,
+      c.Status,
+
+      cr.CustomerReportId,
+      cr.ReportId,
+      cr.MenuName,
+      cr.SortOrder,
+      cr.IsActive AS CustomerReportIsActive,
+      cr.ConnectionId,
+      cr.OverrideJson,
+
+      r.ReportKey,
+      r.ReportName,
+      r.ReportPath,
+      r.TemplateKey,
+      r.DataSourceKey,
+      r.ExportModes,
+      r.IsActive AS ReportIsActive,
+
+      rs.ParamSchemaJson,
+      rs.ColumnsJson,
+      rs.DefaultConfigJson
+    FROM CustomerReports cr
+    JOIN Customers c ON c.CustomerId = cr.CustomerId
+    JOIN Report r ON r.ReportId = cr.ReportId
+    LEFT JOIN ReportSettings rs ON rs.ReportId = r.ReportId
+    WHERE
+      cr.CustomerId = @CustomerId
+      AND c.Status IN ('ACTIVE','INACTIVE','SUSPENDED')
+      AND cr.IsActive = 1
+      AND r.IsActive = 1
+    ORDER BY
+      ISNULL(cr.SortOrder, 999999) ASC,
+      cr.UpdatedAt DESC;
+  `;
+
+  const r = await req.query(q);
+  return r.recordset || [];
+}
+
+module.exports = { insertReportWithSettings, getAllReports, getViewerInit };

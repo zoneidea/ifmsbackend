@@ -1,4 +1,4 @@
-const { insertReportWithSettings, getAllReports } = require("./report.repo");
+const { insertReportWithSettings, getAllReports, getViewerInit } = require("./report.repo");
 
 function t(v) {
     return (v === undefined || v === null) ? "" : String(v).trim();
@@ -34,6 +34,14 @@ function isValidJsonOrNull(s) {
     } catch {
         return false;
     }
+}
+
+function isGuid(v) {
+    return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(String(v || ""));
+}
+
+function isGuid(v) {
+    return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(String(v || ""));
 }
 
 async function createReport(payload) {
@@ -125,4 +133,34 @@ async function listReports(query) {
     };
 }
 
-module.exports = { createReport, listReports };
+async function viewerInit({ customerId }) {
+    if (!isGuid(customerId)) {
+        const err = new Error("INVALID_CUSTOMER_ID");
+        err.statusCode = 400;
+        throw err;
+    }
+
+    const rows = await getViewerInit(customerId);
+
+    if (rows.length === 0) {
+        return { customer: null, reports: [] };
+    }
+
+    const first = normalizeRow(rows[0]).customer;
+
+    const reports = rows
+        .map((r) => normalizeRow(r).report)
+        // กัน config ว่าง (optional)
+        .map((x) => ({
+            ...x,
+            settings: {
+                paramSchemaJson: x.settings.paramSchemaJson || "{}",
+                columnsJson: x.settings.columnsJson || "[]",
+                defaultConfigJson: x.settings.defaultConfigJson || "{}",
+            },
+        }));
+
+    return { customer: first, reports };
+}
+
+module.exports = { createReport, listReports, viewerInit };

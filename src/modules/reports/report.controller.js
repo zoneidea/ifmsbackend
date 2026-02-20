@@ -1,4 +1,4 @@
-const { createReport, listReports } = require("./report.service");
+const { createReport, listReports, viewerInit } = require("./report.service");
 
 async function postReport(req, res) {
     const result = await createReport(req.body || {});
@@ -21,4 +21,14 @@ async function getReports(req, res) {
     });
 }
 
-module.exports = { postReport, getReports };
+async function getInit(req, res, next) {
+    try {
+        const customerId = req.query.customerId;
+        const data = await viewerInit({ customerId });
+        return res.status(200).json(data);
+    } catch (e) {
+        return next(e);
+    }
+}
+
+module.exports = { postReport, getReports, getInit };
