@@ -24,6 +24,7 @@ async function getReports(req, res) {
 async function getInit(req, res, next) {
     try {
         const customerId = req.query.customerId;
+        console.log(req.query)
         const data = await viewerInit({ customerId });
         return res.status(200).json(data);
     } catch (e) {

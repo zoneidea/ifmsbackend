@@ -37,11 +37,8 @@ function isValidJsonOrNull(s) {
 }
 
 function isGuid(v) {
-    return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(String(v || ""));
-}
-
-function isGuid(v) {
-    return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(String(v || ""));
+    if (!v) return false;
+    return /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/.test(v);
 }
 
 async function createReport(payload) {
@@ -146,21 +143,39 @@ async function viewerInit({ customerId }) {
         return { customer: null, reports: [] };
     }
 
-    const first = normalizeRow(rows[0]).customer;
+    const customer = {
+        customerId: rows[0].CustomerId,
+        customerName: rows[0].CustomerName,
+        status: rows[0].Status
+    };
 
-    const reports = rows
-        .map((r) => normalizeRow(r).report)
-        // กัน config ว่าง (optional)
-        .map((x) => ({
-            ...x,
-            settings: {
-                paramSchemaJson: x.settings.paramSchemaJson || "{}",
-                columnsJson: x.settings.columnsJson || "[]",
-                defaultConfigJson: x.settings.defaultConfigJson || "{}",
-            },
-        }));
+    const reports = rows.map(r => ({
+        customerReportId: r.CustomerReportId,
+        reportId: r.ReportId,
 
-    return { customer: first, reports };
+        reportKey: r.ReportKey,
+        reportName: r.ReportName,
+        reportPath: r.ReportPath,
+        templateKey: r.TemplateKey,
+        dataSourceKey: r.DataSourceKey,
+        exportModes: r.ExportModes,
+
+        menuName: r.MenuName || r.ReportName,
+        sortOrder: r.SortOrder,
+        isActive: !!r.CustomerReportIsActive,
+
+        connectionId: r.ConnectionId || null,
+        overrideJson: r.OverrideJson || null,
+
+        // ✅ keep as JSON-string per your standard
+        settings: {
+            paramSchemaJson: r.ParamSchemaJson || "{}",
+            columnsJson: r.ColumnsJson || "[]",
+            defaultConfigJson: r.DefaultConfigJson || "{}"
+        }
+    }));
+
+    return { customer, reports };
 }
 
 module.exports = { createReport, listReports, viewerInit };
