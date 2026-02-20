@@ -246,14 +246,14 @@ async function insertCustomerReport(customerId, items) {
       req.input("MenuName", sql.NVarChar(200), item.menuName);
       req.input("SortOrder", sql.Int, item.sortOrder);
       req.input("IsActive", sql.Bit, item.isActive ? 1 : 0);
-      req.input("ConnectionId", sql.UniqueIdentifier, item.connectionId);
+      // req.input("ConnectionId", sql.UniqueIdentifier, item.connectionId);
       req.input("OverrideJson", sql.NVarChar(sql.MAX), item.overrideJson ?? null);
 
       const q = `
         INSERT INTO CustomerReports
-          (CustomerReportId, CustomerId, ReportId, MenuName, SortOrder, IsActive, ConnectionId, OverrideJson, CreatedAt, UpdatedAt)
+          (CustomerReportId, CustomerId, ReportId, MenuName, SortOrder, IsActive, OverrideJson, CreatedAt, UpdatedAt)
         VALUES
-          (NEWID(), @CustomerId, @ReportId, @MenuName, @SortOrder, @IsActive, @ConnectionId, @OverrideJson, SYSUTCDATETIME(), SYSUTCDATETIME());
+          (NEWID(), @CustomerId, @ReportId, @MenuName, @SortOrder, @IsActive, @OverrideJson, SYSUTCDATETIME(), SYSUTCDATETIME());
       `;
 
       await req.query(q);
@@ -268,4 +268,41 @@ async function insertCustomerReport(customerId, items) {
   }
 }
 
-module.exports = { getAllCustomers, insertCustomerWithConnection, updateCustomerWithConnection, insertConnectionAuditLog, insertCustomerReport };
+async function getCustomerReports(customerId) {
+  const pool = await getPool();
+  const req = pool.request();
+
+  req.input("CustomerId", sql.UniqueIdentifier, customerId);
+
+  const q = `
+    SELECT
+      cr.CustomerReportId,
+      cr.CustomerId,
+      cr.ReportId,
+      cr.MenuName,
+      cr.SortOrder,
+      cr.IsActive,
+      cr.ConnectionId,
+      cr.OverrideJson,
+
+      r.ReportKey,
+      r.ReportName,
+      r.TemplateKey,
+      r.DataSourceKey,
+      r.ExportModes
+    FROM CustomerReports cr
+    JOIN Report r ON r.ReportId = cr.ReportId
+    WHERE
+      cr.CustomerId = @CustomerId
+      AND cr.IsActive = 1
+      AND r.IsActive = 1
+    ORDER BY
+      ISNULL(cr.SortOrder, 999999) ASC,
+      cr.UpdatedAt DESC;
+  `;
+
+  const result = await req.query(q);
+  return result.recordset || [];
+}
+
+module.exports = { getAllCustomers, insertCustomerWithConnection, updateCustomerWithConnection, insertConnectionAuditLog, insertCustomerReport, getCustomerReports };

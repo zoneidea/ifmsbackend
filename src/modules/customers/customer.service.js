@@ -1,5 +1,5 @@
 const sql = require("mssql");
-const { getAllCustomers, insertCustomerWithConnection, updateCustomerWithConnection, insertConnectionAuditLog, insertCustomerReport } = require("./customer.repo");
+const { getAllCustomers, insertCustomerWithConnection, updateCustomerWithConnection, insertConnectionAuditLog, insertCustomerReport, getCustomerReports } = require("./customer.repo");
 const { encryptToVarbinary, decryptFromVarbinary } = require("../../utils/crypto");
 const { sanitizeConnectionForLog } = require("./audit.helper");
 
@@ -311,9 +311,9 @@ async function addReportToCustomer(customerId, payload) {
         if (!isGuid(item.reportId)) {
             return { ok: false, status: 400, message: "reportId ไม่ถูกต้อง" };
         }
-        if (!isGuid(item.connectionId)) {
-            return { ok: false, status: 400, message: "connectionId ไม่ถูกต้อง" };
-        }
+        // if (!isGuid(item.connectionId)) {
+        //     return { ok: false, status: 400, message: "connectionId ไม่ถูกต้อง" };
+        // }
         if (!item.menuName || item.menuName.length > 200) {
             return { ok: false, status: 400, message: "menuName ไม่ถูกต้อง" };
         }
@@ -324,4 +324,32 @@ async function addReportToCustomer(customerId, payload) {
     return { ok: true };
 }
 
-module.exports = { createCustomer, updateCustomer, listCustomers, addReportToCustomer };
+async function getReportsByCustomer(customerId) {
+    if (!isGuid(customerId)) {
+        const err = new Error("INVALID_CUSTOMER_ID");
+        err.statusCode = 400;
+        throw err;
+    }
+
+    const rows = await getCustomerReports(customerId);
+
+    return {
+        customerId,
+        reports: rows.map(r => ({
+            customerReportId: r.CustomerReportId,
+            reportId: r.ReportId,
+            reportKey: r.ReportKey,
+            reportName: r.ReportName,
+            menuName: r.MenuName || r.ReportName,
+            sortOrder: r.SortOrder,
+            isActive: !!r.IsActive,
+            connectionId: r.ConnectionId,
+            overrideJson: r.OverrideJson,
+            exportModes: r.ExportModes,
+            templateKey: r.TemplateKey,
+            dataSourceKey: r.DataSourceKey
+        }))
+    };
+}
+
+module.exports = { createCustomer, updateCustomer, listCustomers, addReportToCustomer, getReportsByCustomer };
