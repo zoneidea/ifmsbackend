@@ -294,7 +294,7 @@ async function getCustomerReports(customerId) {
     JOIN Report r ON r.ReportId = cr.ReportId
     WHERE
       cr.CustomerId = @CustomerId
-      AND cr.IsActive = 1
+      AND cr.IsActive IN (0, 1)
       AND r.IsActive = 1
     ORDER BY
       ISNULL(cr.SortOrder, 999999) ASC,
