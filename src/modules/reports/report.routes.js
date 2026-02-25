@@ -6,5 +6,5 @@ const router = express.Router();
 router.get("/init", getInit);
 router.get("/", asyncHandler(getReports)); 
 router.post("/", asyncHandler(postReport));
-router.patch("/:customerReportId/status", updateStatusHandler);
+router.put("/:customerReportId/status", updateStatusHandler);
 module.exports = router;
