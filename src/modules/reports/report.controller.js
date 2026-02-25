@@ -1,4 +1,4 @@
-const { createReport, listReports, viewerInit } = require("./report.service");
+const { createReport, listReports, viewerInit, setCustomerReportStatus } = require("./report.service");
 
 async function postReport(req, res) {
     const result = await createReport(req.body || {});
@@ -32,4 +32,21 @@ async function getInit(req, res, next) {
     }
 }
 
-module.exports = { postReport, getReports, getInit };
+async function updateStatusHandler(req, res, next) {
+    try {
+        const { customerReportId } = req.params;
+        const { customerId, isActive } = req.body;
+
+        await setCustomerReportStatus({
+            customerReportId,
+            customerId,
+            isActive
+        });
+
+        res.status(200).json({ success: true });
+    } catch (e) {
+        next(e);
+    }
+}
+
+module.exports = { postReport, getReports, getInit, updateStatusHandler };

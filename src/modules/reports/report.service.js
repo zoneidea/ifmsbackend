@@ -1,4 +1,4 @@
-const { insertReportWithSettings, getAllReports, getViewerInit } = require("./report.repo");
+const { insertReportWithSettings, getAllReports, getViewerInit, updateCustomerReportStatus } = require("./report.repo");
 
 function t(v) {
     return (v === undefined || v === null) ? "" : String(v).trim();
@@ -178,4 +178,30 @@ async function viewerInit({ customerId }) {
     return { customer, reports };
 }
 
-module.exports = { createReport, listReports, viewerInit };
+async function setCustomerReportStatus({
+    customerReportId,
+    customerId,
+    isActive
+}) {
+    if (!isGuid(customerReportId) || !isGuid(customerId)) {
+        const err = new Error("INVALID_ID");
+        err.statusCode = 400;
+        throw err;
+    }
+
+    const updated = await updateCustomerReportStatus({
+        customerReportId,
+        customerId,
+        isActive
+    });
+
+    if (!updated) {
+        const err = new Error("REPORT_NOT_FOUND");
+        err.statusCode = 404;
+        throw err;
+    }
+
+    return true;
+}
+
+module.exports = { createReport, listReports, viewerInit, setCustomerReportStatus };

@@ -139,4 +139,33 @@ async function getViewerInit(customerId) {
   return r.recordset || [];
 }
 
-module.exports = { insertReportWithSettings, getAllReports, getViewerInit };
+async function updateCustomerReportStatus({
+  customerReportId,
+  customerId,
+  isActive
+}) {
+  const pool = await getPool();
+  const req = pool.request();
+
+  req.input("CustomerReportId", sql.UniqueIdentifier, customerReportId);
+  req.input("CustomerId", sql.UniqueIdentifier, customerId);
+  req.input("IsActive", sql.Bit, isActive ? 1 : 0);
+
+  const q = `
+    UPDATE CustomerReports
+    SET
+      IsActive = @IsActive,
+      UpdatedAt = SYSUTCDATETIME()
+    WHERE
+      CustomerReportId = @CustomerReportId
+      AND CustomerId = @CustomerId;
+
+    SELECT @@ROWCOUNT AS Affected;
+  `;
+
+  const r = await req.query(q);
+  return (r.recordset?.[0]?.Affected || 0) > 0;
+}
+
+
+module.exports = { insertReportWithSettings, getAllReports, getViewerInit, updateCustomerReportStatus };
