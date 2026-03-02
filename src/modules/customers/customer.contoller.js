@@ -1,4 +1,4 @@
-const { createCustomer, updateCustomer, listCustomers, addReportToCustomer, getReportsByCustomer } = require("./customer.service");
+const { createCustomer, updateCustomer, listCustomers, addReportToCustomer, getReportsByCustomer, suspendCustomer } = require("./customer.service");
 
 async function postCustomer(req, res) {
     // ในระบบจริง actor มาจาก SSO/JWT แต่ตอนนี้ยังไม่ทำ
@@ -93,4 +93,20 @@ async function getCustomerReportsHandler(req, res, next) {
     }
 }
 
-module.exports = { postCustomer, putCustomer, getCustomers, postCustomerReport, getCustomerReportsHandler };
+async function softDeleteHandler(req, res, next) {
+    try {
+        const actor = (req.headers["x-actor"] || "system").toString().slice(0, 100);
+        const customerId = String(req.params.customerId || "");
+
+        await suspendCustomer(customerId, actor);
+
+        res.status(200).json({
+            success: true,
+            message: "Customer suspended"
+        });
+    } catch (e) {
+        next(e);
+    }
+}
+
+module.exports = { postCustomer, putCustomer, getCustomers, postCustomerReport, getCustomerReportsHandler, softDeleteHandler };

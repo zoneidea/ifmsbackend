@@ -305,4 +305,26 @@ async function getCustomerReports(customerId) {
   return result.recordset || [];
 }
 
-module.exports = { getAllCustomers, insertCustomerWithConnection, updateCustomerWithConnection, insertConnectionAuditLog, insertCustomerReport, getCustomerReports };
+async function softDeleteCustomer({ customerId, actor }) {
+  const pool = await getPool();
+  const req = pool.request();
+
+  req.input("CustomerId", sql.UniqueIdentifier, customerId);
+  req.input("Actor", sql.NVarChar(100), actor ?? "system");
+
+  const q = `
+    UPDATE Customers
+    SET
+      Status = 'INACTIVE',
+      UpdatedAt = SYSUTCDATETIME(),
+      UpdatedBy = @Actor
+    WHERE CustomerId = @CustomerId;
+
+    SELECT @@ROWCOUNT AS Affected;
+  `;
+
+  const r = await req.query(q);
+  return (r.recordset?.[0]?.Affected || 0) > 0;
+}
+
+module.exports = { getAllCustomers, insertCustomerWithConnection, updateCustomerWithConnection, softDeleteCustomer, insertConnectionAuditLog, insertCustomerReport, getCustomerReports };

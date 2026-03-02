@@ -1,5 +1,5 @@
 const sql = require("mssql");
-const { getAllCustomers, insertCustomerWithConnection, updateCustomerWithConnection, insertConnectionAuditLog, insertCustomerReport, getCustomerReports } = require("./customer.repo");
+const { getAllCustomers, insertCustomerWithConnection, updateCustomerWithConnection, insertConnectionAuditLog, insertCustomerReport, getCustomerReports, softDeleteCustomer } = require("./customer.repo");
 const { encryptToVarbinary, decryptFromVarbinary } = require("../../utils/crypto");
 const { sanitizeConnectionForLog } = require("./audit.helper");
 
@@ -352,4 +352,22 @@ async function getReportsByCustomer(customerId) {
     };
 }
 
-module.exports = { createCustomer, updateCustomer, listCustomers, addReportToCustomer, getReportsByCustomer };
+async function suspendCustomer(customerId, actor) {
+    if (!isGuid(customerId)) {
+        const err = new Error("INVALID_CUSTOMER_ID");
+        err.statusCode = 400;
+        throw err;
+    }
+
+    const updated = await softDeleteCustomer({ customerId, actor });
+
+    if (!updated) {
+        const err = new Error("CUSTOMER_NOT_FOUND");
+        err.statusCode = 404;
+        throw err;
+    }
+
+    return true;
+}
+
+module.exports = { createCustomer, updateCustomer, listCustomers, addReportToCustomer, getReportsByCustomer, suspendCustomer };
