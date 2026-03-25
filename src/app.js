@@ -8,16 +8,17 @@ const customerRoutes = require("./modules/customers/customer.routes");
 const usersRoutes = require("./modules/users/user.routes")
 
 const app = express();
-app.set("trust proxy", true);
+app.set("trust proxy", false);
 
 app.use(helmet());
 app.use(cors());
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "1024mb" }));
 
 app.use(
     rateLimit({
-        windowMs: 60 * 1000,
-        max: 120,
+        windowMs: 15 * 60 * 1000,
+        max: 100,
+        validate: { trustProxy: false }, // ปิดการตรวจสอบแจ้งเตือนนี้
     })
 );
 
