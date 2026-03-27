@@ -8,7 +8,7 @@ async function insertUser({ username, passwordHash }) {
     req.input("PasswordHash", sql.VarBinary(256), passwordHash);
 
     const q = `
-    INSERT INTO Users (Username, PasswordHash, IsActive)
+    INSERT INTO iFMSReportUsers (Username, PasswordHash, IsActive)
     VALUES (@Username, @PasswordHash, 1);
   `;
 
@@ -23,7 +23,7 @@ async function getUserByUsername(username) {
 
     const q = `
     SELECT Username, PasswordHash, IsActive
-    FROM Users
+    FROM iFMSReportUsers
     WHERE Username = @Username;
   `;
 
@@ -37,7 +37,7 @@ async function getAllUsers() {
 
     const q = `
     SELECT Username, IsActive, CreatedAt, UpdatedAt
-    FROM Users
+    FROM iFMSReportUsers
     ORDER BY Username ASC;
   `;
 
