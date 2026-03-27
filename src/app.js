@@ -6,6 +6,7 @@ const rateLimit = require("express-rate-limit");
 const errorHandler = require("./middlewares/errorHandler");
 const customerRoutes = require("./modules/customers/customer.routes");
 const usersRoutes = require("./modules/users/user.routes")
+const customerReportRoutes = require('./modules/customerreports/customerreport.routes')
 
 const app = express();
 app.set("trust proxy", false);
@@ -35,6 +36,8 @@ app.use("/reports", reportRoutes);
 // ✅ POST /customers
 app.use("/customers", customerRoutes);
 app.use('/users', usersRoutes)
+
+app.use('/ExternalReports', customerReportRoutes);
 
 // ✅ error handler ต้องท้ายสุด
 app.use(errorHandler);
