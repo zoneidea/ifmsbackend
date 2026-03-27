@@ -10,7 +10,7 @@ async function insertConnectionAuditLog(tx, { connectionId, action, actor, ipAdd
   req.input("DetailJson", sql.NVarChar(sql.MAX), detailJson ?? null);
 
   const q = `
-    INSERT INTO ConnectionAuditLogs
+    INSERT INTO iFMSReportConnectionAuditLogs
       (ConnectionId, Action, Actor, IpAddress, UserAgent, DetailJson, CreatedAt)
     VALUES
       (@ConnectionId, @Action, @Actor, @IpAddress, @UserAgent, @DetailJson, SYSUTCDATETIME());
@@ -40,7 +40,7 @@ async function insertCustomerWithConnection({
     req1.input("Actor", sql.NVarChar(100), actor ?? "system");
 
     const q1 = `
-      INSERT INTO Customers
+      INSERT INTO iFMSReportCustomers
         (CustomerId, CustomerName, Status, Notes, CreatedAt, UpdatedAt, CreatedBy, UpdatedBy)
       OUTPUT INSERTED.CustomerId
       VALUES
@@ -69,7 +69,7 @@ async function insertCustomerWithConnection({
     req2.input("KeyVersion", sql.Int, connection.keyVersion);
 
     const q2 = `
-      INSERT INTO CustomerDbConnections
+      INSERT INTO iFMSReportCustomerDbConnections
         (ConnectionId, CustomerId, ConnectionName, DbType, Host, Port, DatabaseName, AuthMode,
          EncUsername, EncPassword, OptionsJson, IsActive,
          LastTestAt, LastTestStatus, LastTestMessage, KeyVersion, CreatedAt, UpdatedAt)
@@ -116,7 +116,7 @@ async function updateCustomerWithConnection({ customerId, customerName, status, 
     req1.input("Actor", sql.NVarChar(100), actor ?? "system");
 
     const q1 = `
-      UPDATE Customers
+      UPDATE iFMSReportCustomers
       SET CustomerName=@CustomerName,
           Status=@Status,
           Notes=@Notes,
@@ -147,7 +147,7 @@ async function updateCustomerWithConnection({ customerId, customerName, status, 
     req2.input("KeyVersion", sql.Int, connection.keyVersion ?? null);
 
     const q2 = `
-      UPDATE CustomerDbConnections
+      UPDATE iFMSReportCustomerDbConnections
       SET ConnectionName=@ConnectionName,
           DbType=@DbType,
           Host=@Host,
@@ -217,10 +217,10 @@ async function getAllCustomers() {
       cc.KeyVersion,
       cc.CreatedAt AS ConnectionCreatedAt,
       cc.UpdatedAt AS ConnectionUpdatedAt
-    FROM Customers c
+    FROM iFMSReportCustomers c
     OUTER APPLY (
       SELECT TOP 1 *
-      FROM CustomerDbConnections x
+      FROM iFMSReportCustomerDbConnections x
       WHERE x.CustomerId = c.CustomerId
       ORDER BY x.IsActive DESC, x.UpdatedAt DESC
     ) cc
@@ -250,7 +250,7 @@ async function insertCustomerReport(customerId, items) {
       req.input("OverrideJson", sql.NVarChar(sql.MAX), item.overrideJson ?? null);
 
       const q = `
-        INSERT INTO CustomerReports
+        INSERT INTO iFMSReportCustomerReports
           (CustomerReportId, CustomerId, ReportId, MenuName, SortOrder, IsActive, OverrideJson, CreatedAt, UpdatedAt)
         VALUES
           (NEWID(), @CustomerId, @ReportId, @MenuName, @SortOrder, @IsActive, @OverrideJson, SYSUTCDATETIME(), SYSUTCDATETIME());
@@ -290,8 +290,8 @@ async function getCustomerReports(customerId) {
       r.TemplateKey,
       r.DataSourceKey,
       r.ExportModes
-    FROM CustomerReports cr
-    JOIN Report r ON r.ReportId = cr.ReportId
+    FROM iFMSReportCustomerReports cr
+    JOIN iFMSReport r ON r.ReportId = cr.ReportId
     WHERE
       cr.CustomerId = @CustomerId
       AND cr.IsActive IN (0, 1)
@@ -313,7 +313,7 @@ async function softDeleteCustomer({ customerId, actor }) {
   req.input("Actor", sql.NVarChar(100), actor ?? "system");
 
   const q = `
-    UPDATE Customers
+    UPDATE iFMSReportCustomers
     SET
       Status = 'INACTIVE',
       UpdatedAt = SYSUTCDATETIME(),

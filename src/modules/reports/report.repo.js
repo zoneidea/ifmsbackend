@@ -26,7 +26,7 @@ async function insertReportWithSettings({
     req1.input("IsActive", sql.Bit, isActive ? 1 : 0);
 
     const q1 = `
-      INSERT INTO Report
+      INSERT INTO iFMSReport
         (ReportId, ReportKey, ReportName, ReportPath, TemplateKey, DataSourceKey, ExportModes, IsActive, CreatedAt, UpdatedAt)
       OUTPUT INSERTED.ReportId
       VALUES
@@ -43,7 +43,7 @@ async function insertReportWithSettings({
     req2.input("DefaultConfigJson", sql.NVarChar(sql.MAX), settings?.defaultConfigJson ?? null);
 
     const q2 = `
-      INSERT INTO ReportSettings
+      INSERT INTO iFMSReportSettings
         (ReportId, ParamSchemaJson, ColumnsJson, DefaultConfigJson, UpdatedAt)
       VALUES
         (@ReportId, @ParamSchemaJson, @ColumnsJson, @DefaultConfigJson, SYSUTCDATETIME());
@@ -81,8 +81,8 @@ async function getAllReports({ isActive } = {}) {
 
       CASE WHEN rs.ReportId IS NULL THEN 0 ELSE 1 END AS HasSettings,
       rs.UpdatedAt AS SettingsUpdatedAt
-    FROM Report r
-    LEFT JOIN ReportSettings rs ON rs.ReportId = r.ReportId
+    FROM iFMSReport r
+    LEFT JOIN iFMSReportSettings rs ON rs.ReportId = r.ReportId
     ${where}
     ORDER BY r.UpdatedAt DESC;
   `;
@@ -121,10 +121,10 @@ async function getViewerInit(customerId) {
       rs.ParamSchemaJson,
       rs.ColumnsJson,
       rs.DefaultConfigJson
-    FROM CustomerReports cr
-    JOIN Customers c ON c.CustomerId = cr.CustomerId
-    JOIN Report r ON r.ReportId = cr.ReportId
-    LEFT JOIN ReportSettings rs ON rs.ReportId = r.ReportId
+    FROM iFMSReportCustomerReports cr
+    JOIN iFMSReportCustomers c ON c.CustomerId = cr.CustomerId
+    JOIN iFMSReport r ON r.ReportId = cr.ReportId
+    LEFT JOIN iFMSReportSettings rs ON rs.ReportId = r.ReportId
     WHERE
       cr.CustomerId = @CustomerId
       AND c.Status IN ('ACTIVE','INACTIVE','SUSPENDED')
@@ -152,7 +152,7 @@ async function updateCustomerReportStatus({
   req.input("IsActive", sql.Bit, isActive ? 1 : 0);
 
   const q = `
-    UPDATE CustomerReports
+    UPDATE iFMSReportCustomerReports
     SET
       IsActive = @IsActive,
       UpdatedAt = SYSUTCDATETIME()

@@ -52,7 +52,7 @@ async function softDeleteUser(username) {
     req.input("Username", sql.NVarChar(50), username);
 
     const q = `
-    UPDATE Users
+    UPDATE iFMSReportUsers
     SET IsActive = 0,
         UpdatedAt = SYSUTCDATETIME()
     WHERE Username = @Username AND IsActive = 1;
