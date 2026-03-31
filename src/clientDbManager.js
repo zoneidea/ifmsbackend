@@ -38,9 +38,9 @@ async function getClientPool(connectionConfig) {
     }
 
     console.log("[CLIENT_DB_CONNECT_ATTEMPT]", {
-        customerId: connectionConfig.customerId,
-        connectionId: connectionConfig.connectionId,
-        host: connectionConfig.host,
+        customerId: connectionConfig.CustomerId,
+        connectionId: connectionConfig.ConnectionId,
+        host: connectionConfig.Host,
         port: connectionConfig.port,
         databaseName: connectionConfig.databaseName,
         username,
@@ -54,9 +54,9 @@ async function getClientPool(connectionConfig) {
     const pool = new sql.ConnectionPool({
         user: username || undefined,
         password: password || undefined,
-        server: connectionConfig.host,
+        server: connectionConfig.Host,
         port: Number(connectionConfig.port || 1433),
-        database: connectionConfig.databaseName,
+        database: connectionConfig.DatabaseName,
         options: {
             encrypt: false,
             trustServerCertificate: true,
