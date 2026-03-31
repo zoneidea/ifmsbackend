@@ -12,8 +12,21 @@ const app = express();
 app.set("trust proxy", false);
 
 app.use(helmet());
-app.use(cors());
 app.use(express.json({ limit: "1024mb" }));
+
+const whiteList = ['localhost:3000', 'http://localhost:3000', 'http://localhost:8080'];
+var corsOptionsDelegate = function (req, callback) {
+    var corsOptions;
+    if (whiteList.indexOf(req.header('Origin')) !== -1) {
+        corsOptions = { origin: true }
+    } else {
+        corsOptions = { origin: false }
+    }
+
+    callback(null, corsOptions)
+}
+
+app.use(cors(corsOptionsDelegate));
 
 app.use(
     rateLimit({
