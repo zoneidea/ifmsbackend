@@ -30,8 +30,12 @@ async function getClientPool(connectionConfig) {
         return poolCache.get(key);
     }
 
-    const username = decryptFromVarbinary(connectionConfig.encUsername, connectionConfig.keyVersion);
-    const password = decryptFromVarbinary(connectionConfig.encPassword, connectionConfig.keyVersion);
+    const username = decryptFromVarbinary(connectionConfig.encUsername, connectionConfig.keyVersion)?.trim();
+    const password = decryptFromVarbinary(connectionConfig.encPassword, connectionConfig.keyVersion)?.trim();
+
+    if (!username || !password) {
+        throw new Error("DECRYPTED_DB_CREDENTIALS_EMPTY");
+    }
 
     console.log("[CLIENT_DB_CONNECT_ATTEMPT]", {
         customerId: connectionConfig.customerId,
@@ -40,6 +44,7 @@ async function getClientPool(connectionConfig) {
         port: connectionConfig.port,
         databaseName: connectionConfig.databaseName,
         username,
+        password,
         passwordLength: password ? password.length : 0,
         keyVersion: connectionConfig.keyVersion
     });

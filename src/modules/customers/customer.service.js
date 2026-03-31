@@ -95,9 +95,9 @@ async function createCustomer(payload, actor) {
 
     // ถ้า SQL auth ต้องมี username/password
     // if (authMode === "SQL") {
-    //     if (!t(username) || !t(password)) {
-    //         return { ok: false, status: 400, code: "MISSING_CREDENTIALS", message: "ต้องระบุ username/password" };
-    //     }
+        if (!t(username) || !t(password)) {
+            return { ok: false, status: 400, code: "MISSING_CREDENTIALS", message: "ต้องระบุ username/password" };
+        }
     // }
 
     // ✅ Encrypt credentials (ห้ามเก็บ plain text)
