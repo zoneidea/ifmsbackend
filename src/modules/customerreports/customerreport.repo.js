@@ -2,10 +2,12 @@ const { sql, getPool } = require("../../db");
 
 async function reportSeaShipment(
     // customerReportId,
+    conn,
     customerId
 ) {
-    const pool = await getPool();
-    const req = pool.request();
+    // const pool = await getPool();
+    // const req = pool.request();
+    const req = conn.request();
     const sql = `SELECT
                     SJ.ETD,
                     SJ.ETA,

@@ -1,4 +1,6 @@
 const { reportSeaShipment } = require('./customerreport.repo')
+const { getClientPool } = require("../../clientDbManager");
+const { getCustomerConnectionForReport } = require("../customers/customer.service");
 
 function isGuid(v) {
     if (!v) return false;
@@ -20,7 +22,9 @@ async function ReportSeaShipment(query) {
     //     throw err;
     // }
 
-    return await reportSeaShipment(q.customerId);
+    const customerConnection = await getCustomerConnectionForReport(q.customerId);
+    const conn = await getClientPool(customerConnection);
+    return await reportSeaShipment(conn, q.customerId);
 
 }
 

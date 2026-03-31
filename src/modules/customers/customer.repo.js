@@ -327,4 +327,49 @@ async function softDeleteCustomer({ customerId, actor }) {
   return (r.recordset?.[0]?.Affected || 0) > 0;
 }
 
-module.exports = { getAllCustomers, insertCustomerWithConnection, updateCustomerWithConnection, softDeleteCustomer, insertConnectionAuditLog, insertCustomerReport, getCustomerReports };
+async function getActiveCustomerConnectionByCustomerId(customerId) {
+  const pool = await getPool();
+  const req = pool.request();
+
+  req.input("CustomerId", sql.UniqueIdentifier, customerId);
+
+  const q = `
+    SELECT TOP 1
+      ConnectionId,
+      CustomerId,
+      ConnectionName,
+      DbType,
+      Host,
+      Port,
+      DatabaseName,
+      AuthMode,
+      EncUsername,
+      EncPassword,
+      OptionsJson,
+      IsActive,
+      LastTestAt,
+      LastTestStatus,
+      LastTestMessage,
+      KeyVersion,
+      CreatedAt,
+      UpdatedAt
+    FROM iFMSReportCustomerDbConnections
+    WHERE CustomerId = @CustomerId
+      AND IsActive = 1
+    ORDER BY UpdatedAt DESC, CreatedAt DESC;
+  `;
+
+  const r = await req.query(q);
+  return r.recordset?.[0] || null;
+}
+
+module.exports = {
+  getAllCustomers,
+  insertCustomerWithConnection,
+  updateCustomerWithConnection,
+  softDeleteCustomer,
+  insertConnectionAuditLog,
+  insertCustomerReport,
+  getCustomerReports,
+  getActiveCustomerConnectionByCustomerId
+};

@@ -1,5 +1,5 @@
 const sql = require("mssql");
-const { getAllCustomers, insertCustomerWithConnection, updateCustomerWithConnection, insertConnectionAuditLog, insertCustomerReport, getCustomerReports, softDeleteCustomer } = require("./customer.repo");
+const { getAllCustomers, insertCustomerWithConnection, updateCustomerWithConnection, insertConnectionAuditLog, insertCustomerReport, getCustomerReports, softDeleteCustomer, getActiveCustomerConnectionByCustomerId } = require("./customer.repo");
 const { encryptToVarbinary, decryptFromVarbinary } = require("../../utils/crypto");
 const { sanitizeConnectionForLog } = require("./audit.helper");
 
@@ -370,4 +370,39 @@ async function suspendCustomer(customerId, actor) {
     return true;
 }
 
-module.exports = { createCustomer, updateCustomer, listCustomers, addReportToCustomer, getReportsByCustomer, suspendCustomer };
+async function getCustomerConnectionForReport(customerId) {
+    if (!isGuid(customerId)) {
+        const err = new Error("INVALID_CUSTOMER_ID");
+        err.statusCode = 400;
+        throw err;
+    }
+
+    const row = await getActiveCustomerConnectionByCustomerId(customerId);
+
+    if (!row) {
+        const err = new Error("CUSTOMER_CONNECTION_NOT_FOUND");
+        err.statusCode = 404;
+        throw err;
+    }
+
+    return {
+        connectionId: row.ConnectionId,
+        customerId: row.CustomerId,
+        connectionName: row.ConnectionName,
+        dbType: row.DbType,
+        host: row.Host,
+        port: row.Port,
+        databaseName: row.DatabaseName,
+        authMode: row.AuthMode,
+        encUsername: row.EncUsername,
+        encPassword: row.EncPassword,
+        optionsJson: row.OptionsJson,
+        isActive: !!row.IsActive,
+        keyVersion: row.KeyVersion,
+        lastTestAt: row.LastTestAt,
+        lastTestStatus: row.LastTestStatus,
+        lastTestMessage: row.LastTestMessage
+    };
+}
+
+module.exports = { createCustomer, updateCustomer, listCustomers, addReportToCustomer, getReportsByCustomer, suspendCustomer, getCustomerConnectionForReport };
