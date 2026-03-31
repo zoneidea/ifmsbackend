@@ -33,6 +33,17 @@ async function getClientPool(connectionConfig) {
     const username = decryptFromVarbinary(connectionConfig.encUsername, connectionConfig.keyVersion);
     const password = decryptFromVarbinary(connectionConfig.encPassword, connectionConfig.keyVersion);
 
+    console.log("[CLIENT_DB_CONNECT_ATTEMPT]", {
+        customerId: connectionConfig.customerId,
+        connectionId: connectionConfig.connectionId,
+        host: connectionConfig.host,
+        port: connectionConfig.port,
+        databaseName: connectionConfig.databaseName,
+        username,
+        passwordLength: password ? password.length : 0,
+        keyVersion: connectionConfig.keyVersion
+    });
+
     const extraOptions = safeJsonParse(connectionConfig.optionsJson, {});
 
     const pool = new sql.ConnectionPool({
