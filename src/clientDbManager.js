@@ -1,5 +1,5 @@
 const sql = require("mssql");
-const { decryptFromVarbinary } = require("../utils/crypto");
+const { decryptFromVarbinary } = require("./utils/crypto");
 
 const poolCache = new Map();
 
