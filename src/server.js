@@ -2,7 +2,6 @@ require("dotenv").config();
 const app = require("./app");
 const { getPool } = require("./db");
 
-const app = express();
 app.use(express.json());
 
 const whiteList = ['localhost:3000', 'http://localhost:3000', 'http://localhost:8080'];
