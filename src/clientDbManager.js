@@ -37,17 +37,17 @@ async function getClientPool(connectionConfig) {
         throw new Error("DECRYPTED_DB_CREDENTIALS_EMPTY");
     }
 
-    console.log("[CLIENT_DB_CONNECT_ATTEMPT]", {
-        customerId: connectionConfig.customerId,
-        connectionId: connectionConfig.connectionId,
-        host: connectionConfig.host,
-        port: connectionConfig.port,
-        databaseName: connectionConfig.databaseName,
-        username,
-        password,
-        passwordLength: password ? password.length : 0,
-        keyVersion: connectionConfig.keyVersion
-    });
+    // console.log("[CLIENT_DB_CONNECT_ATTEMPT]", {
+    //     customerId: connectionConfig.customerId,
+    //     connectionId: connectionConfig.connectionId,
+    //     host: connectionConfig.host,
+    //     port: connectionConfig.port,
+    //     databaseName: connectionConfig.databaseName,
+    //     username,
+    //     password,
+    //     passwordLength: password ? password.length : 0,
+    //     keyVersion: connectionConfig.keyVersion
+    // });
 
     const extraOptions = safeJsonParse(connectionConfig.optionsJson, {});
 

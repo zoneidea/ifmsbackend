@@ -117,6 +117,9 @@ async function reportSeaShipment2(
                 ${where}
                 ORDER BY SJ.JOB_DATE, SJ.JOB_NO;`;
     const r = await req.query(sqlStr);
+
+    console.log("[DEBUG SQL]", sqlStr);
+
     return r.recordset || [];
 }
 
