@@ -1,4 +1,5 @@
-const { sql, getPool } = require("../../db");
+// const { sql, getPool } = require("../../db");
+const sql = require("mssql");
 
 async function reportSeaShipment(
     // customerReportId,
