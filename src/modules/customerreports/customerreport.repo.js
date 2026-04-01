@@ -52,6 +52,7 @@ async function reportSeaShipment2(
     conn,
     filters = {}
 ) {
+    const req = conn.request();
     let where = `WHERE ISNULL(SJ.ACTIVE_FLAG, 0) = 1`;
 
     if (filters.date_start) {
@@ -78,7 +79,7 @@ async function reportSeaShipment2(
         req.input("sales_id", sql.Int, Number(filters.sales_id));
         where += ` AND SJ.SALE_ID = @sales_id`;
     }
-    const req = conn.request();
+
     const sql = `SELECT
                     SJ.ETD,
                     SJ.ETA,
