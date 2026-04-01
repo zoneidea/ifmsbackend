@@ -57,13 +57,13 @@ async function reportSeaShipment2(
     let where = `WHERE ISNULL(SJ.ACTIVE_FLAG, 0) = 1`;
 
     if (filters.date_start) {
-        req.input("date_start", sql.DateTime, filters.date_start);
-        where += ` AND CONVERT(VARCHAR(10), SJ.JOB_DATE, 23) >= @date_start`;
+        req.input("date_start", sql.Date, filters.date_start);
+        where += ` AND SJ.JOB_DATE >= CAST(@date_start AS DATE)`;
     }
 
     if (filters.date_end) {
-        req.input("date_end", sql.DateTime, filters.date_end);
-        where += ` AND CONVERT(VARCHAR(10), SJ.JOB_DATE, 23) < DATEADD(DAY, 1, @date_end)`;
+        req.input("date_end", sql.Date, filters.date_end);
+        where += ` AND SJ.JOB_DATE < DATEADD(DAY, 1, CAST(@date_end AS DATE))`;
     }
 
     if (filters.job_type) {
