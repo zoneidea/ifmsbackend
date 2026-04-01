@@ -49,7 +49,7 @@ async function testConnectionService(payload, meta) {
     //     }
     // }
 
-    const encrypt = true;
+    const encrypt = false;
     const trustServerCertificate = true;
 
     const connectionTimeout = toInt(payload?.timeouts?.connectionTimeoutMs, 5000);
