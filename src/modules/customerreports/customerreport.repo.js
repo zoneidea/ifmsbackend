@@ -87,7 +87,7 @@ async function reportSeaShipment2(
                     ISNULL(RTRIM(SJ.JOB_NO_PREFIX), '')
                         + ISNULL(CAST(SJ.JOB_NO AS varchar(20)), '')
                         + ISNULL(RTRIM(SJ.JOB_NO_SUFFIX), '') AS [Job No.],
-                    SJ.JOB_DATE,
+                    SJ.JOB_DATE AS [Job Date],
                     RTRIM(SJ.JOB_TYPE) AS [Job Type],
                     RTRIM(SJ.JOB_STATUS) AS [Status],
                     SJ.ACTUAL_QTY AS [Qty.],
