@@ -1,4 +1,4 @@
-const { reportSeaShipment } = require('./customerreport.repo')
+const { reportSeaShipment, reportSeaShipment2 } = require('./customerreport.repo')
 const { getClientPool } = require("../../clientDbManager");
 const { getCustomerConnectionForReport } = require("../customers/customer.service");
 
@@ -28,4 +28,25 @@ async function ReportSeaShipment(query) {
 
 }
 
-module.exports = { ReportSeaShipment };
+async function ReportSeaShipment2(query) {
+    const q = query || {};
+
+    if (!isGuid(q.customerId)) {
+        const err = new Error("INVALID_CUSTOMER_ID");
+        err.statusCode = 400;
+        throw err;
+    }
+
+    // if (!isGuid(q.reportId)) {
+    //     const err = new Error("INVALID_REPORT_ID");
+    //     err.statusCode = 400;
+    //     throw err;
+    // }
+
+    const customerConnection = await getCustomerConnectionForReport(q.customerId);
+    const conn = await getClientPool(customerConnection);
+    return await reportSeaShipment2(conn, q.customerId);
+
+}
+
+module.exports = { ReportSeaShipment, ReportSeaShipment2 };

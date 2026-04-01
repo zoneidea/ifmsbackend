@@ -1,4 +1,4 @@
-const { ReportSeaShipment } = require('./customerreport.service')
+const { ReportSeaShipment, ReportSeaShipment2 } = require('./customerreport.service')
 
 async function getReportSeaShipment(req, res) {
     const result = await ReportSeaShipment(req.query);
@@ -9,4 +9,13 @@ async function getReportSeaShipment(req, res) {
     });
 }
 
-module.exports = { getReportSeaShipment };
+async function getReportSeaShipment2(req, res) {
+    const result = await ReportSeaShipment2(req.query);
+    return res.status(200).json({
+        ok: true,
+        data: result,
+        message: "ดึงรายการรายงานสำเร็จ",
+    });
+}
+
+module.exports = { getReportSeaShipment, getReportSeaShipment2 };
