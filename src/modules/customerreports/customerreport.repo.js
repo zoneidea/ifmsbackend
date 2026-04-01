@@ -9,7 +9,7 @@ async function reportSeaShipment(
     // const pool = await getPool();
     // const req = pool.request();
     const req = conn.request();
-    const sql = `SELECT
+    const sqlStr = `SELECT
                     SJ.ETD,
                     SJ.ETA,
                     ISNULL(RTRIM(SJ.JOB_NO_PREFIX), '')
@@ -44,7 +44,7 @@ async function reportSeaShipment(
                 ) HB
                 WHERE SJ.ACTIVE_FLAG = 1 AND SJ.JOB_STATUS = 'ACTIVE'
                 ORDER BY SJ.JOB_DATE, SJ.JOB_NO;`;
-    const r = await req.query(sql);
+    const r = await req.query(sqlStr);
     return r.recordset || [];
 }
 
@@ -81,7 +81,7 @@ async function reportSeaShipment2(
         where += ` AND SJ.SALE_ID = @sales_id`;
     }
 
-    const sql = `SELECT
+    const sqlStr = `SELECT
                     SJ.ETD,
                     SJ.ETA,
                     ISNULL(RTRIM(SJ.JOB_NO_PREFIX), '')
@@ -116,7 +116,7 @@ async function reportSeaShipment2(
                 ) HB
                 ${where}
                 ORDER BY SJ.JOB_DATE, SJ.JOB_NO;`;
-    const r = await req.query(sql);
+    const r = await req.query(sqlStr);
     return r.recordset || [];
 }
 
