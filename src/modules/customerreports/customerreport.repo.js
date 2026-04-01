@@ -29,16 +29,16 @@ async function reportSeaShipment(
                         WHEN HB.HBL_COUNT = 1 THEN HB.FIRST_HBL_NO
                         ELSE HB.FIRST_HBL_NO + ' #'+ CAST(HB.HBL_COUNT AS varchar(10)) + ' HB/L(s)'
                     END AS [H-B/L No.]
-                FROM FMS.dbo.SEA_JOB SJ
-                LEFT JOIN FMS.dbo.AGENT AG
+                FROM SEA_JOB SJ
+                LEFT JOIN AGENT AG
                     ON AG.REC_ID = SJ.AGENT_ID
-                LEFT JOIN FMS.dbo.SALESPERSON SP
+                LEFT JOIN SALESPERSON SP
                     ON SP.REC_ID = SJ.SALE_ID
                 OUTER APPLY (
                     SELECT
                         MIN(RTRIM(H.HBL_NO)) AS FIRST_HBL_NO,
                         COUNT(*) AS HBL_COUNT
-                    FROM FMS.dbo.HBL H
+                    FROM HBL H
                     WHERE H.JOB_ID = SJ.REC_ID
                     AND NULLIF(RTRIM(H.HBL_NO), '') IS NOT NULL
                 ) HB
@@ -58,12 +58,12 @@ async function reportSeaShipment2(
 
     if (filters.date_start) {
         req.input("date_start", sql.DateTime, filters.date_start);
-        where += ` AND SJ.JOB_DATE >= @date_start`;
+        where += ` AND DATE(SJ.JOB_DATE) >= @date_start`;
     }
 
     if (filters.date_end) {
         req.input("date_end", sql.DateTime, filters.date_end);
-        where += ` AND SJ.JOB_DATE < DATEADD(DAY, 1, @date_end)`;
+        where += ` AND DATE(SJ.JOB_DATE) < DATEADD(DAY, 1, @date_end)`;
     }
 
     if (filters.job_type) {
@@ -101,16 +101,16 @@ async function reportSeaShipment2(
                         WHEN HB.HBL_COUNT = 1 THEN HB.FIRST_HBL_NO
                         ELSE HB.FIRST_HBL_NO + ' #'+ CAST(HB.HBL_COUNT AS varchar(10)) + ' HB/L(s)'
                     END AS [H-B/L No.]
-                FROM FMS.dbo.SEA_JOB SJ
-                LEFT JOIN FMS.dbo.AGENT AG
+                FROM SEA_JOB SJ
+                LEFT JOIN AGENT AG
                     ON AG.REC_ID = SJ.AGENT_ID
-                LEFT JOIN FMS.dbo.SALESPERSON SP
+                LEFT JOIN SALESPERSON SP
                     ON SP.REC_ID = SJ.SALE_ID
                 OUTER APPLY (
                     SELECT
                         MIN(RTRIM(H.HBL_NO)) AS FIRST_HBL_NO,
                         COUNT(*) AS HBL_COUNT
-                    FROM FMS.dbo.HBL H
+                    FROM HBL H
                     WHERE H.JOB_ID = SJ.REC_ID
                     AND NULLIF(RTRIM(H.HBL_NO), '') IS NOT NULL
                 ) HB
