@@ -53,6 +53,8 @@ async function reportSeaShipment2(
     conn,
     filters = {}
 ) {
+
+    console.log("[DEBUG FILTER]", filters);
     const req = conn.request();
     let where = `WHERE ISNULL(SJ.ACTIVE_FLAG, 0) = 1`;
 
