@@ -57,7 +57,7 @@ async function testConnectionService(payload, meta) {
 
     // ✅ IMPORTANT: ใช้ ConnectionPool ใหม่ ไม่ใช้ sql.connect(global)
     const config = {
-        // server: host,
+        server: host,
         port,
         database: databaseName,
         options: { encrypt, trustServerCertificate },
