@@ -50,10 +50,34 @@ async function reportSeaShipment(
 async function reportSeaShipment2(
     // customerReportId,
     conn,
-    customerId
+    filters = {}
 ) {
-    // const pool = await getPool();
-    // const req = pool.request();
+    let where = `WHERE ISNULL(SJ.ACTIVE_FLAG, 0) = 1`;
+
+    if (filters.date_start) {
+        req.input("date_start", sql.DateTime, filters.date_start);
+        where += ` AND SJ.JOB_DATE >= @date_start`;
+    }
+
+    if (filters.date_end) {
+        req.input("date_end", sql.DateTime, filters.date_end);
+        where += ` AND SJ.JOB_DATE < DATEADD(DAY, 1, @date_end)`;
+    }
+
+    if (filters.job_type) {
+        req.input("job_type", sql.VarChar(10), filters.job_type);
+        where += ` AND SJ.JOB_TYPE = @job_type`;
+    }
+
+    if (filters.agent_id) {
+        req.input("agent_id", sql.Int, Number(filters.agent_id));
+        where += ` AND SJ.AGENT_ID = @agent_id`;
+    }
+
+    if (filters.sales_id) {
+        req.input("sales_id", sql.Int, Number(filters.sales_id));
+        where += ` AND SJ.SALE_ID = @sales_id`;
+    }
     const req = conn.request();
     const sql = `SELECT
                     SJ.ETD,
@@ -88,7 +112,7 @@ async function reportSeaShipment2(
                     WHERE H.JOB_ID = SJ.REC_ID
                     AND NULLIF(RTRIM(H.HBL_NO), '') IS NOT NULL
                 ) HB
-                WHERE SJ.ACTIVE_FLAG = 1 AND SJ.JOB_STATUS = 'ACTIVE'
+                ${where}
                 ORDER BY SJ.JOB_DATE, SJ.JOB_NO;`;
     const r = await req.query(sql);
     return r.recordset || [];

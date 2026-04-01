@@ -16,12 +16,6 @@ async function ReportSeaShipment(query) {
         throw err;
     }
 
-    // if (!isGuid(q.reportId)) {
-    //     const err = new Error("INVALID_REPORT_ID");
-    //     err.statusCode = 400;
-    //     throw err;
-    // }
-
     const customerConnection = await getCustomerConnectionForReport(q.customerId);
     const conn = await getClientPool(customerConnection);
     return await reportSeaShipment(conn, q.customerId);
@@ -37,15 +31,17 @@ async function ReportSeaShipment2(query) {
         throw err;
     }
 
-    // if (!isGuid(q.reportId)) {
-    //     const err = new Error("INVALID_REPORT_ID");
-    //     err.statusCode = 400;
-    //     throw err;
-    // }
-
     const customerConnection = await getCustomerConnectionForReport(q.customerId);
     const conn = await getClientPool(customerConnection);
-    return await reportSeaShipment2(conn, q.customerId);
+    return await reportSeaShipment2(conn, {
+        customerId: q.customerId,
+        date_start: q.date_start || null,
+        date_end: q.date_end || null,
+        job_type: q.job_type || null,
+        agent_id: q.agent_id || null,
+        sales_id: q.sales_id || null,
+    }
+    );
 
 }
 
