@@ -14,7 +14,7 @@ app.set("trust proxy", false);
 app.use(helmet());
 app.use(express.json({ limit: "1024mb" }));
 
-const whiteList = ['localhost:3000', 'http://localhost:3000', 'http://localhost:8080'];
+const whiteList = ['localhost:3000', 'http://localhost:3000', 'http://localhost:8080', 'http://141.98.17.228:8080'];
 var corsOptionsDelegate = function (req, callback) {
     var corsOptions;
     if (whiteList.indexOf(req.header('Origin')) !== -1) {
